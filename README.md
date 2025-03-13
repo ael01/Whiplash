@@ -1,7 +1,7 @@
 # Whiplash
 These data and code are for reproducing the main analyses in "Weathering the storm: precipitation whiplash has limited effects on agricultural production and pesticide use in California" (Ashley E. Larsen, Daniel Sousa, Amy Quandt, Andrew J. MacDonald). 
 
-Data Dictionary:
+Data Dictionary (*see raw
 year – Year of growing permit
 permit – Grower ID
 trsFields – Public Land Survey Section (Township Range Section) of field, reported by grower
