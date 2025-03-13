@@ -1,5 +1,6 @@
 # Whiplash
 These data and code are for reproducing the main analyses in "Weathering the storm: precipitation whiplash has limited effects on agricultural production and pesticide use in California" (Ashley E. Larsen, Daniel Sousa, Amy Quandt, Andrew J. MacDonald). 
+Main data file is FloodingAnalysisDID.csv (see dictionary below). Main code file is FloodAnalysis_Git. You must change the working directory at the noted area in the top of the code file to the location of the csv. All outputs will be written to that location as well. 
 ```
 Data Dictionary 
 year – Year of growing permit
