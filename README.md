@@ -1,7 +1,7 @@
 # Whiplash
 These data and code are for reproducing the main analyses in "Weathering the storm: precipitation whiplash has limited effects on agricultural production and pesticide use in California" (Ashley E. Larsen, Daniel Sousa, Amy Quandt, Andrew J. MacDonald). 
 ```
-Data Dictionary (*see raw
+Data Dictionary 
 year – Year of growing permit
 permit – Grower ID
 trsFields – Public Land Survey Section (Township Range Section) of field, reported by grower
@@ -26,5 +26,5 @@ ihsKgHaAIInsectOnly100  – Inverse hyperbolic sine transformation of KgHaAIInse
 ihsKgHaAIHerbOnly100  – Inverse hyperbolic sine transformation of KgHaAIHerbOnly, after pre-multiplying by 100 (see text)
 ihsKgHaAIInsectFung100  – Inverse hyperbolic sine transformation of KgHaAIInsectFung, after pre-multiplying by 100 (see text)
 ihsKgHaAIFungOnly100  – Inverse hyperbolic sine transformation of KgHaAIFungOnly, after pre-multiplying by 100 (see text)
-![image](https://github.com/user-attachments/assets/3bc30968-a9d6-475c-bdef-8e6252247301)
+
 ```
