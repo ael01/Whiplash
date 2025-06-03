@@ -9,6 +9,7 @@ ssc install reghdfe, replace
 ssc install outreg2, replace
 ssc install coefplot, replace
 ssc install estout, replace
+ssc install asdoc, replace
 */
 
 
@@ -128,7 +129,7 @@ graph combine InsectPretreat.gph HerbPretreat.gph  FungPretreat.gph InsFungPretr
 graph export FigureS3_AllPesticides_Pretreat.png, replace
 
 *************************
-**Split sample -Fig S4
+**Split sample -Fig S5
 *************************
 local outcome "InsectOnly HerbOnly FungOnly InsectFung"
 	foreach out in `outcome'{
@@ -151,11 +152,14 @@ graph export FigureS4_AllYrSplit.png, replace
 
 **********************
 *Spin through top crops by area.
-*Figure S5-S8
+*Figure S11-S14
 **********************
 *see labels  InsectFung
 *label list
 *Almond (2), Pistachio (123), Uncultivated Ag (163), Grape (66), Alfalfa (1), Orange (108), Wheat Fot/Fod (168), Carrot (31), Tangerine/SDLS (156), Corn for/fod (41)
+*csv loses format of encoded variable.
+drop rcommShort
+encode commShort, gen(rcommShort)
 local commNum "2 123 163 66 1 108 168 31 156 41"
 	foreach com in `commNum'{
 
@@ -193,7 +197,7 @@ graph export FigureS8_InsFungCrops.png, replace
 *Robustness tests mentioned but not shown in main text.
 *************************
 *Diff in Diff
-*>1ha water robustness test
+*>1ha water robustness test Fig S6
 ***************
 gen Water23B = (Water23 >=1 & HaFlood23>=1)
 replace Water23B = . if Water23B ==0 & Water23 ==1
@@ -216,7 +220,7 @@ graph export Flood_All_1ha.png, replace
 
 *************************
 *Diff in Diff
-*<25ha water robustness test
+*<25ha water robustness test Fig S7
 ***************
 gen Water23C = (Water23 ==1 & HaFlood23<=25)
 replace Water23C = . if Water23C ==0 & Water23 ==1
@@ -240,7 +244,7 @@ graph export Flood_All_25ha.png, replace
 
 ***************
 *Diff in Diff
-*Removing late dates active
+*Removing late dates active Fig S9
 ***************
 gen Late = (MonthActive>=11)
 
@@ -284,6 +288,113 @@ graph export DiD_Level.png, replace
 
 
 **********************
+*Diff in Diff-
+* Including Nearby Fig S10
+**********************
+xtile Near_quart= NearFloodAreaMax,n(4)
+gen DiDNearQuart1 = (Near_quart==1 & After==1)
+gen DiDNearQuart2 = (Near_quart==2 & After==1)
+gen DiDNearQuart3 = (Near_quart==3 & After==1)
+gen DiDNearQuart4 = (Near_quart==4 & After==1)
+
+reghdfe ihsKgHaAIInsectOnly DiD Water23 FieldSizeHa i.DiDNearQuart2 i.DiDNearQuart3 i.DiDNearQuart4 ib1.Near_quart ib2022.year , absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo InsectOnlyNear
+outreg2 using TableS3_DiDNear.doc, se nolabel nonotes title("`out'") dec(3) 2aster alpha(0.01, 0.05, 0.1) symbol(**,*, ~) ctitle("Insect-Only") replace
+
+reghdfe ihsKgHaAIHerbOnly DiD Water23 FieldSizeHa i.DiDNearQuart2 i.DiDNearQuart3 i.DiDNearQuart4 ib1.Near_quart ib2022.year, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo HerbOnlyNear
+outreg2 using TableS3_DiDNear.doc, se nolabel nonotes title("`out'") dec(3) 2aster alpha(0.01, 0.05, 0.1) symbol(**,*, ~) ctitle("Herb-Only") 
+
+reghdfe ihsKgHaAIFungOnly DiD Water23 FieldSizeHa i.DiDNearQuart2 i.DiDNearQuart3 i.DiDNearQuart4 ib1.Near_quart ib2022.year, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo FungOnlyNear
+outreg2 using TableS3_DiDNear.doc, se nolabel nonotes title("`out'") dec(3) 2aster alpha(0.01, 0.05, 0.1) symbol(**,*, ~) ctitle("Fung-Only") 
+
+reghdfe ihsKgHaAIInsectFung DiD Water23 FieldSizeHa i.DiDNearQuart2 i.DiDNearQuart3 i.DiDNearQuart4 ib1.Near_quart ib2022.year, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo InsFungNear
+outreg2 using TableS3_DiDNear.doc, se nolabel nonotes title("`out'") dec(3) 2aster alpha(0.01, 0.05, 0.1) symbol(**,*, ~) ctitle("Insect/Fung") 
+
+*DiD figure, Figure 4
+coefplot InsectOnlyNear, bylabel(Insect.) msymbol(O) mcolor(black) ciopts(color(black)) || HerbOnlyNear, bylabel(Herb.) msymbol(D) mcolor(black) ciopts(color(black)) ||  FungOnlyNear, bylabel(Fung.) msymbol(S) mcolor(black) ciopts(color(black)) ||InsFungNear, bylabel(Ins/Fung.) msymbol(T) mcolor(black) ciopts(color(black)) ||, bycoefs keep(DiD) vertical yline(0,lcolor(black)) norecycle nooffsets msize(vlarge) xlabel(,labsize(large) angle(0)) ylabel(,labsize(large)) ylabel(-0.5  0.5, nogrid) yscale(range(-0.5 0.5) noextend) ytitle("IHS Pesticide Use (kg/ha)", size(large)) legend(off) scheme(s1mono)
+graph save FloodNear.gph, replace
+graph export FloodNear.png, replace
+
+**********************
+*Diff in Diff-
+*1% of pesticides Fig S8
+**********************
+egen p99Insect = pctile(KgHaAIInsectOnly), p(99)
+egen p99Herb = pctile(KgHaAIHerbOnly), p(99)
+egen p99Fung = pctile(KgHaAIFungOnly), p(99)
+egen p99InsectFung = pctile(KgHaAIInsectFung), p(99)
+
+reghdfe ihsKgHaAIInsectOnly DiD Water23 FieldSizeHa ib2022.year if KgHaAIInsectOnly <= p99Insect, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo InsectOnly99
+
+reghdfe ihsKgHaAIHerbOnly DiD FieldSizeHa Water23 ib2022.year if KgHaAIHerbOnly <= p99Herb, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo HerbOnly99
+
+reghdfe ihsKgHaAIFungOnly DiD FieldSizeHa Water23 ib2022.year if KgHaAIFungOnly <= p99Fung, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo FungOnly99
+
+reghdfe ihsKgHaAIInsectFung DiD FieldSizeHa Water23 ib2022.year if KgHaAIInsectFung <= p99InsectFung, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo InsFung99
+
+
+*DiD figure, Figure 4
+coefplot InsectOnly99, bylabel(Insect.) msymbol(O) mcolor(black) ciopts(color(black)) || HerbOnly99, bylabel(Herb.) msymbol(D) mcolor(black) ciopts(color(black)) ||  FungOnly99, bylabel(Fung.) msymbol(S) mcolor(black) ciopts(color(black)) ||InsFung99, bylabel(Ins/Fung.) msymbol(T) mcolor(black) ciopts(color(black)) ||, bycoefs keep(DiD) vertical yline(0,lcolor(black)) norecycle nooffsets msize(vlarge) xlabel(,labsize(large) angle(0)) ylabel(,labsize(large)) ylabel(-0.5  0.5, nogrid) yscale(range(-0.5 0.5) noextend) ytitle("IHS Pesticide Use (kg/ha)", size(large)) legend(off) scheme(s1mono)
+graph save DiD_99pctile.gph, replace
+graph export DiD_99pctile.png, replace
+
+
+**********************
+*Diff in Diff-
+*Quantiles of flooding  Fig S4
+**********************
+*Bins*
+*quartile ignoring 0, which will be control group
+xtile water_tri= HaFlood23 if HaFlood23>0,n(3)
+replace water_tri = 0 if water_tri==.
+gen water_tri_bin = water_tri +1
+gen DiDTri1 = (water_tri_bin==1 & After==1)
+gen DiDTri2 = (water_tri_bin==2 & After==1)
+gen DiDTri3 = (water_tri_bin==3 & After==1)
+gen DiDTri4 = (water_tri_bin==4 & After==1)
+
+label var DiDTri1 "No Water"
+label var DiDTri2 "Terc. 1"
+label var DiDTri3 "Terc. 2"
+label var DiDTri4 "Terc. 3"
+
+reghdfe ihsKgHaAIInsectOnly DiDTri2 DiDTri3 DiDTri4 ib1.water_tri_bin FieldSizeHa ib2022.year , absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo InsectOnlyBins
+
+reghdfe ihsKgHaAIHerbOnly DiDTri2 DiDTri3 DiDTri4 ib1.water_tri_bin FieldSizeHa ib2022.year, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo HerbOnlyBins
+
+reghdfe ihsKgHaAIFungOnly DiDTri2 DiDTri3 DiDTri4 ib1.water_tri_bin FieldSizeHa ib2022.year, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo FungOnlyBins
+
+reghdfe ihsKgHaAIInsectFung DiDTri2 DiDTri3 DiDTri4 ib1.water_tri_bin FieldSizeHa ib2022.year, absorb(permit rcommShort trsFields) cluster(trsFields)
+eststo InsFungBins
+
+*all pesticides, seperate y axes.
+coefplot InsectOnlyBins, bylabel(Insecticide) msymbol(O) mcolor(black) ciopts(color(black)) ||,  keep(DiD*) rename(*.year = "") vertical yline(0,lcolor(black)) norecycle nooffsets msize(vlarge) xlabel(,labsize(large) angle(0)) ylabel(,labsize(large)) ylabel(-0.5  0.5, nogrid) yscale(range(-0.5 0.5) noextend) ytitle("IHS Insecticide (kg/ha)", size(large)) legend(off) scheme(s1mono) xline(3.5, lcolor(gray))
+graph save InsectBins.gph, replace
+
+coefplot HerbOnlyBins, bylabel(Herbicide) msymbol(D) mcolor(black) ciopts(color(black)) ||,  keep(DiD*) rename(*.year = "") vertical yline(0,lcolor(black)) norecycle nooffsets msize(vlarge) xlabel(,labsize(large) angle(0)) ylabel(-0.5  0.5, nogrid) yscale(range(-0.5 0.5) noextend) ytitle("IHS Herbicide (kg/ha)", size(large)) legend(off) scheme(s1mono) xline(3.5, lcolor(gray))
+graph save HerbBins.gph, replace
+
+coefplot FungOnlyBins, bylabel(Fungicide) msymbol(S) mcolor(black) ciopts(color(black)) ||,  keep(DiD*) rename(*.year = "") vertical yline(0,lcolor(black)) norecycle nooffsets msize(vlarge) xlabel(,labsize(large) angle(0)) ylabel(,labsize(large)) ylabel(-0.5  0.5, nogrid) yscale(range(-0.5 0.5) noextend) ytitle("IHS Fungicide (kg/ha)", size(large)) legend(off) scheme(s1mono) xline(3.5, lcolor(gray))
+graph save FungBins.gph, replace
+
+coefplot InsFungBins, bylabel(InsFung) msymbol(T) mcolor(black) ciopts(color(black)) ||,  keep(DiD*) rename(*.year = "") vertical yline(0,lcolor(black)) norecycle nooffsets msize(vlarge) xlabel(,labsize(large) angle(0)) ylabel(,labsize(large)) ylabel(-0.5  0.5, nogrid) yscale(range(-0.5 0.5) noextend) ytitle("IHS Insect/Fungicide (kg/ha)", size(large)) legend(off) scheme(s1mono) xline(3.5, lcolor(gray))
+graph save InsFungBins.gph, replace
+
+graph combine InsectBins.gph HerbBins.gph  FungBins.gph InsFungBins.gph, scheme(s1mono)
+graph export AllPesticides_Bins.png, replace
+
+
+**********************
 *Stats mentioned in paper
 *pesticide use for almonds and pistachios
 summ KgHaAIInsectOnly KgHaAIHerbOnly KgHaAIFungOnly KgHaAIInsectFung if rcommShort ==2
@@ -315,5 +426,27 @@ list in 1/10
 list FieldSizeHa2022 FieldSizeHa2023 if rcomm==123
 *approx 70k pistachios, and reduced by 42%. 
 display 70000*(5.6*0.42)
+
+********************
+*Descriptive stats production*
+*Table S3
+********************
+import excel CropReport, firstrow case(lower) clear
+gen TotValK = totvalue/1000
+gen TotProdnK = totproduction/1000
+gen HarvHa = harvestedacres * 0.404686
+gen YieldHa = productionperacre * 0.404686
+drop unitvalue notes totvalue totproduction productionperacre harvestedacres
+encode crop, gen(cropNum)
+drop if crop == "Citrus, All"| crop== "Grapes, All"
+
+*reshape to wide data to run paired t-tests
+reshape wide HarvHa TotValK YieldHa TotProdnK, i(crop) j(year)
+*paired ttest
+asdoc ttest TotValK2022 == TotValK2023, cnames(Mean22, Mean23) abb(6) save(Prdnttest.doc) replace
+asdoc ttest YieldHa2022 == YieldHa2023, cnames(Mean22, Mean23) abb(6) rowappend
+asdoc ttest HarvHa2022 == HarvHa2023, cnames(Mean22, Mean23) abb(6) rowappend
+asdoc ttest TotProdnK2022 == TotProdnK2023, cnames(Mean22, Mean23) abb(6) rowappend
+ 
 
 log close
